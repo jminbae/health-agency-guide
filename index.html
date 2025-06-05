@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보건관리전문기관 개원 A to Z: 대화형 가이드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Professional -->
+    <!-- Application Structure Plan: 본 애플리케이션은 보고서의 목차를 그대로 따르지 않고, 예비 창업자의 의사결정 흐름에 맞춰 정보를 재구성한 대화형 가이드 구조를 채택했습니다. 1) '시장 분석'을 통해 사업 기회를 먼저 파악하고, 2) '설립 요건'에서 구체적인 필요조건을 확인한 뒤, 3) '비용 시뮬레이터'로 재정 계획을 수립하고, 4) '서비스 모델'과 5) '성공 전략'을 통해 운영 계획을 구체화하는 단계별 접근 방식을 제공합니다. 이는 사용자가 방대한 정보를 단계적으로 소화하며 실질적인 사업 계획을 수립하도록 돕기 위함이며, 복잡한 보고서를 탐색 가능한 지식 기반으로 전환하는 가장 효과적인 방법입니다. -->
+    <!-- Visualization & Content Choices: 보고서의 핵심 데이터를 사용자가 쉽게 이해하고 상호작용할 수 있도록 최적의 시각화 방법을 선택했습니다. [KOSHA 평가 결과 -> 목표: 기관별 품질 비교 -> 시각화: Bar Chart (Chart.js)] 기관별 등급 분포를 직관적으로 비교합니다. [인력/장비 기준 -> 목표: 개인별 필요조건 확인 -> 표현: 대화형 계산기/체크리스트] 사용자가 자신의 상황에 맞는 요건을 직접 계산하고 확인할 수 있습니다. [예상 비용 -> 목표: 재무 계획 수립 지원 -> 시각화: Donut/Bar Charts (Chart.js) 기반 시뮬레이터] 사용자가 직접 값을 입력하며 투자 및 운영 비용을 예측해볼 수 있습니다. [지정 절차 -> 목표: 과정의 단계적 이해 -> 표현: HTML/CSS 기반 순서도] 복잡한 행정 절차를 시각적으로 단순화하여 표현합니다. 모든 시각화는 Canvas 기반의 Chart.js 또는 순수 HTML/CSS로 구현하여 SVG/Mermaid를 사용하지 않는다는 요구사항을 준수했습니다. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #FDFBF8; }
+        .nav-item { transition: all 0.3s ease; }
+        .nav-item.active { color: #1E3A8A; border-bottom-color: #1E3A8A; font-weight: 700; }
+        .nav-item:not(.active):hover { color: #3B82F6; border-bottom-color: #DBEAFE; }
+        .content-section { display: none; }
+        .content-section.active { display: block; animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); padding: 1.5rem; transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        @media (max-width: 768px) { .chart-container { height: 300px; max-height: 350px; } }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #2563EB; cursor: pointer; border-radius: 50%; }
+        input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #2563EB; cursor: pointer; border-radius: 50%; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">보건관리전문기관 개원 A to Z</h1>
+            <p class="mt-4 text-lg text-gray-600">대화형 가이드를 통해 성공적인 개원을 계획하세요.</p>
+        </header>
+
+        <nav class="sticky top-0 bg-white/80 backdrop-blur-sm z-10 mb-12 border-b border-gray-200">
+            <ul class="flex justify-center flex-wrap -mb-px text-sm font-medium text-center">
+                <li class="mr-2"><a href="#" id="nav-market" class="nav-item inline-block p-4 border-b-2 border-transparent rounded-t-lg">시장 분석</a></li>
+                <li class="mr-2"><a href="#" id="nav-requirements" class="nav-item inline-block p-4 border-b-2 border-transparent rounded-t-lg">설립 요건</a></li>
+                <li class="mr-2"><a href="#" id="nav-cost" class="nav-item inline-block p-4 border-b-2 border-transparent rounded-t-lg">비용 시뮬레이터</a></li>
+                <li class="mr-2"><a href="#" id="nav-services" class="nav-item inline-block p-4 border-b-2 border-transparent rounded-t-lg">서비스 모델</a></li>
+                <li><a href="#" id="nav-strategy" class="nav-item inline-block p-4 border-b-2 border-transparent rounded-t-lg">성공 전략</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <!-- Section 1: 시장 분석 -->
+            <section id="market-analysis" class="content-section">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">시장 분석 및 기회 탐색</h2>
+                    <p class="mt-2 text-gray-600">현재 시장 현황을 파악하고 성장 동력을 확인하여 비즈니스 기회를 발견하세요.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 items-center">
+                    <div class="card">
+                        <h3 class="text-xl font-bold mb-4">2023년 보건관리전문기관 평가 등급 분포</h3>
+                        <p class="text-sm text-gray-500 mb-4">총 124개 기관 대상 평가 결과, 다수의 기관이 B등급에 분포하여 신규 기관이 고품질 서비스로 경쟁할 여지가 충분함을 시사합니다.</p>
+                        <div class="chart-container h-72 md:h-80">
+                            <canvas id="koshaGradeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-xl font-bold mb-4">주요 시장 성장 동력</h3>
+                        <p class="text-sm text-gray-500 mb-6">산업 환경 변화에 따라 보건관리 서비스 수요는 지속적으로 증가하고 있습니다.</p>
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 h-6 w-6 text-2xl">⚖️</div>
+                                <div class="ml-4">
+                                    <h4 class="font-bold">중대재해처벌법</h4>
+                                    <p class="text-gray-600 text-sm">50인 미만 사업장까지 적용이 확대되면서, 전문기관에 대한 의존도와 컨설팅 수요가 급증하고 있습니다.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 h-6 w-6 text-2xl">🌱</div>
+                                <div class="ml-4">
+                                    <h4 class="font-bold">ESG 경영 확산</h4>
+                                    <p class="text-gray-600 text-sm">기업의 사회적 책임(Social) 이행의 일환으로 근로자 건강 및 안전에 대한 투자가 확대되고 있습니다.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 h-6 w-6 text-2xl">💻</div>
+                                <div class="ml-4">
+                                    <h4 class="font-bold">디지털 전환 (DT)</h4>
+                                    <p class="text-gray-600 text-sm">AI, IoT, 빅데이터 기술을 활용한 선제적, 과학적 보건관리 서비스에 대한 요구가 커지고 있습니다.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 h-6 w-6 text-2xl">🧠</div>
+                                <div class="ml-4">
+                                    <h4 class="font-bold">직장 내 정신건강</h4>
+                                    <p class="text-gray-600 text-sm">직무 스트레스 등 정신건강 관리의 중요성이 부각되며 관련 프로그램 및 컨설팅 시장이 성장하고 있습니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: 설립 요건 -->
+            <section id="requirements" class="content-section">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">설립 요건 및 지정 절차</h2>
+                    <p class="mt-2 text-gray-600">개원에 필요한 인력, 시설, 장비 기준과 지정 절차를 단계별로 확인하세요.</p>
+                </div>
+
+                <div class="space-y-12">
+                    <!-- 인력 기준 계산기 -->
+                    <div class="card">
+                        <h3 class="text-xl font-bold mb-2">인력 기준 계산기</h3>
+                        <p class="text-sm text-gray-500 mb-6">예상 위탁 사업장 수 또는 근로자 수를 조절하여 필요한 최소 전문인력 구성을 확인해보세요.</p>
+                        <div class="grid md:grid-cols-2 gap-6 items-center">
+                            <div>
+                                <label for="companyScale" class="font-medium">위탁 사업장 수: <span id="companyScaleValue" class="text-blue-600 font-bold">100</span>개</label>
+                                <input id="companyScale" type="range" min="1" max="500" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <label for="employeeScale" class="font-medium">위탁 근로자 수: <span id="employeeScaleValue" class="text-blue-600 font-bold">10000</span>명</label>
+                                <input id="employeeScale" type="range" min="1" max="50000" value="10000" step="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                        </div>
+                        <div id="requiredPersonnel" class="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                            <h4 class="font-bold mb-4 text-lg text-blue-800">예상 필요 인력</h4>
+                            <ul class="space-y-2 text-gray-700"></ul>
+                        </div>
+                    </div>
+
+                    <!-- 장비 및 시설 기준 -->
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="card">
+                            <h3 class="text-xl font-bold mb-4">필수 장비 리스트</h3>
+                            <p class="text-sm text-gray-500 mb-4">산업안전보건법 시행규칙 [별표 6]에 따른 필수 장비 목록입니다.</p>
+                            <div class="max-h-80 overflow-y-auto pr-2 space-y-3 text-sm">
+                                <div class="p-3 bg-gray-50 rounded-md"><strong>작업환경관리:</strong> 개인용 시료채취기, 검지관식 가스농도측정기, 소음측정기(주파수분석), WBGT 측정기, 조도계, 직독식 유해가스농도측정기, 국소배기장치 성능시험장비 등</div>
+                                <div class="p-3 bg-gray-50 rounded-md"><strong>건강관리:</strong> 혈당검사용 간이검사기, 혈압계</div>
+                                <div class="p-3 bg-gray-50 rounded-md"><strong>보건교육:</strong> 빔프로젝터, 시청각 자료 재생 장치 등 현대적 교육에 필요한 장비 (자율 선택)</div>
+                            </div>
+                        </div>
+                         <div class="card">
+                            <h3 class="text-xl font-bold mb-4">필수 시설 기준</h3>
+                            <p class="text-sm text-gray-500 mb-4">물리적 공간은 서비스의 질과 직결됩니다.</p>
+                            <div class="space-y-4">
+                                <div class="flex items-center">
+                                    <span class="text-2xl mr-3">🏢</span>
+                                    <div>
+                                        <h4 class="font-semibold">사무실</h4>
+                                        <p class="text-sm text-gray-600">업무 수행을 위한 기본 공간</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-2xl mr-3">💬</span>
+                                    <div>
+                                        <h4 class="font-semibold">건강상담실</h4>
+                                        <p class="text-sm text-gray-600">근로자의 프라이버시가 보장되는 상담 공간</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-2xl mr-3">👨‍🏫</span>
+                                    <div>
+                                        <h4 class="font-semibold">보건교육실</h4>
+                                        <p class="text-sm text-gray-600">효과적인 교육을 위한 전용 공간</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 지정 절차 -->
+                    <div class="card">
+                         <h3 class="text-xl font-bold mb-6 text-center">지정 절차 흐름도</h3>
+                         <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4">
+                             <div class="text-center p-4 bg-gray-100 rounded-lg w-full md:w-auto">
+                                 <div class="text-3xl mb-2">📄</div>
+                                 <h4 class="font-bold">1. 서류 준비</h4>
+                                 <p class="text-xs text-gray-500">신청서, 사업계획서, 증빙서류 등</p>
+                             </div>
+                             <div class="text-2xl text-gray-400 font-mono">→</div>
+                             <div class="text-center p-4 bg-gray-100 rounded-lg w-full md:w-auto">
+                                 <div class="text-3xl mb-2">📤</div>
+                                 <h4 class="font-bold">2. 관할 노동청 신청</h4>
+                                 <p class="text-xs text-gray-500">지역별 기관은 지방관서, 업종별은 본부</p>
+                             </div>
+                              <div class="text-2xl text-gray-400 font-mono">→</div>
+                             <div class="text-center p-4 bg-gray-100 rounded-lg w-full md:w-auto">
+                                 <div class="text-3xl mb-2">🕵️</div>
+                                 <h4 class="font-bold">3. 서류 심사 및 실사</h4>
+                                 <p class="text-xs text-gray-500">처리 기한: 약 20일 (변동 가능)</p>
+                             </div>
+                              <div class="text-2xl text-gray-400 font-mono">→</div>
+                             <div class="text-center p-4 bg-gray-100 rounded-lg w-full md:w-auto">
+                                 <div class="text-3xl mb-2">📜</div>
+                                 <h4 class="font-bold">4. 지정서 발급</h4>
+                                 <p class="text-xs text-gray-500">지정 완료 및 업무 개시</p>
+                             </div>
+                         </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Section 3: 비용 시뮬레이터 -->
+            <section id="cost" class="content-section">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">개원 비용 시뮬레이터</h2>
+                    <p class="mt-2 text-gray-600">주요 변수를 입력하여 예상 초기 투자 비용과 월 운영 비용을 예측해보세요.</p>
+                </div>
+
+                <div class="grid lg:grid-cols-5 gap-8">
+                    <div class="lg:col-span-2 card">
+                        <h3 class="text-xl font-bold mb-6">입력 항목</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="font-medium text-sm">사무실 규모 (평)</label>
+                                <input type="number" id="officeSize" value="50" class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                            <div>
+                                <label class="font-medium text-sm">평당 월세 (만원)</label>
+                                <input type="number" id="rentPerPyeong" value="10" class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                             <div>
+                                <label class="font-medium text-sm">평당 보증금 (만원)</label>
+                                <input type="number" id="depositPerPyeong" value="100" class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                             <div>
+                                <label class="font-medium text-sm">인테리어 비용 (평당, 만원)</label>
+                                <input type="number" id="interiorPerPyeong" value="150" class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                             <div>
+                                <label class="font-medium text-sm">필수 장비 구매 총액 (만원)</label>
+                                <input type="number" id="equipmentCost" value="5000" class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                            <div class="border-t pt-4">
+                               <h4 class="font-medium mb-2 text-sm">인력 구성 (월급, 만원)</h4>
+                               <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                                   <label>의사</label><input type="number" id="doctorSalary" value="800" class="p-1 border rounded-md">
+                                   <label>간호사(2명)</label><input type="number" id="nurseSalary" value="600" class="p-1 border rounded-md">
+                                   <label>산업위생전문가</label><input type="number" id="hygienistSalary" value="400" class="p-1 border rounded-md">
+                                   <label>산업위생인력</label><input type="number" id="hygieneStaffSalary" value="250" class="p-1 border rounded-md">
+                               </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-3 card">
+                        <h3 class="text-xl font-bold mb-6">시뮬레이션 결과</h3>
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="font-semibold text-lg mb-2">예상 초기 투자 (CAPEX)</h4>
+                                <p class="text-3xl font-bold text-blue-600 mb-4"><span id="totalCapex">0</span> 만원</p>
+                                <div class="chart-container h-60">
+                                    <canvas id="capexChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-lg mb-2">예상 월 운영 비용 (OPEX)</h4>
+                                <p class="text-3xl font-bold text-green-600 mb-4"><span id="totalOpex">0</span> 만원</p>
+                                <div class="chart-container h-60">
+                                    <canvas id="opexChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-8 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+                            <strong>참고:</strong> 본 시뮬레이션 결과는 보고서의 데이터를 기반으로 한 추정치이며, 실제 비용은 지역, 업체, 계약 조건에 따라 달라질 수 있습니다. 법인 설립비, 교육비, 마케팅비 등 기타 비용은 별도 고려가 필요합니다.
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section 4: 서비스 모델 -->
+            <section id="services" class="content-section">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">서비스 모델 및 업무 범위</h2>
+                    <p class="mt-2 text-gray-600">법정 필수 서비스부터 높은 부가가치를 창출하는 컨설팅까지, 기관의 핵심 역량을 구성하는 서비스 포트폴리오입니다.</p>
+                </div>
+                
+                <div class="space-y-10">
+                    <div class="card">
+                        <h3 class="text-xl font-bold mb-6 flex items-center"><span class="text-2xl mr-3">📋</span>법정 필수 서비스 (산안법 시행령 제22조 기반)</h3>
+                        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div class="p-4 bg-gray-50 rounded-lg"><strong>규정 준수 지원:</strong> 산업안전보건위원회 운영, 안전보건관리규정 이행 지원</div>
+                            <div class="p-4 bg-gray-50 rounded-lg"><strong>위험성 평가 지원:</strong> 보건 관련 유해·위험요인 파악 및 개선 대책 수립 지도</div>
+                            <div class="p-4 bg-gray-50 rounded-lg"><strong>MSDS 관리 지원:</strong> 물질안전보건자료 게시 및 교육 지도</div>
+                            <div class="p-4 bg-gray-50 rounded-lg"><strong>보호구 선정 지원:</strong> 유해인자에 적합한 보호구 선정 자문</div>
+                            <div class="p-4 bg-gray-50 rounded-lg"><strong>보건교육 실시 지원:</strong> 사업장 맞춤형 보건교육 계획 수립 및 실시</div>
+                            <div class="p-4 bg-gray-50 rounded-lg"><strong>작업환경 점검/개선:</strong> 정기 순회점검 및 유해인자 관리 지도</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3 class="text-xl font-bold mb-6 flex items-center"><span class="text-2xl mr-3">✨</span>부가 가치 컨설팅 서비스</h3>
+                        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <h4 class="font-bold mb-1">중대재해처벌법 대응</h4>
+                                <p class="text-sm text-gray-600">안전보건관리체계 구축 및 이행 컨설팅</p>
+                            </div>
+                            <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <h4 class="font-bold mb-1">ESG 경영 연계</h4>
+                                <p class="text-sm text-gray-600">S(사회) 영역 성과 관리 및 보고 지원</p>
+                            </div>
+                            <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <h4 class="font-bold mb-1">정신건강 증진</h4>
+                                <p class="text-sm text-gray-600">직무 스트레스 평가, 예방 프로그램 개발</p>
+                            </div>
+                            <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                                <h4 class="font-bold mb-1">맞춤형 건강증진</h4>
+                                <p class="text-sm text-gray-600">데이터 기반 건강증진 프로그램 개발/운영</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section 5: 성공 전략 -->
+            <section id="strategy" class="content-section">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">지속가능 성장을 위한 성공 전략</h2>
+                    <p class="mt-2 text-gray-600">경쟁 시장에서 차별화되고 고객의 신뢰를 얻기 위한 핵심 운영 전략입니다.</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="card">
+                        <h3 class="font-bold text-lg mb-3">🎯 서비스 차별화</h3>
+                        <p class="text-sm text-gray-600">특정 산업(반도체, 건설 등) 또는 특정 서비스(데이터 분석, 컨설팅)에 특화하여 독보적인 전문성을 구축하세요.</p>
+                    </div>
+                    <div class="card">
+                        <h3 class="font-bold text-lg mb-3">💻 디지털 역량 강화</h3>
+                        <p class="text-sm text-gray-600">업무 관리 시스템, 데이터 분석 도구, 온라인 교육 플랫폼 등을 적극 도입하여 서비스 질과 운영 효율을 극대화하세요.</p>
+                    </div>
+                     <div class="card">
+                        <h3 class="font-bold text-lg mb-3">👥 핵심인재 확보 및 유지</h3>
+                        <p class="text-sm text-gray-600">경쟁력 있는 보상, 지속적인 교육 기회 제공, 긍정적 조직 문화를 통해 최고의 전문가 팀을 만드세요.</p>
+                    </div>
+                     <div class="card">
+                        <h3 class="font-bold text-lg mb-3">🤝 고객 중심 운영</h3>
+                        <p class="text-sm text-gray-600">고객사의 실질적인 성과(재해율 감소 등)를 데이터로 입증하고, 장기적인 파트너십을 구축하여 신뢰를 얻으세요.</p>
+                    </div>
+                     <div class="card">
+                        <h3 class="font-bold text-lg mb-3">🏆 품질 경영 및 평가 대비</h3>
+                        <p class="text-sm text-gray-600">KOSHA 평가 기준을 내부 품질 관리 지표로 활용하고, 우수 등급(S/A) 획득을 통해 기관의 공신력을 높이세요.</p>
+                    </div>
+                     <div class="card">
+                        <h3 class="font-bold text-lg mb-3">💡 선도 사례 벤치마킹</h3>
+                        <p class="text-sm text-gray-600">S등급 기관들의 강점(우수 인력, R&D 역량, 특화 프로그램 등)을 분석하여 우리 기관만의 성공 모델을 정립하세요.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="text-center mt-16 pt-8 border-t border-gray-200">
+            <p class="text-sm text-gray-500">본 애플리케이션은 제공된 '보건관리전문기관 개원 종합 준비' 보고서를 기반으로 제작되었습니다.</p>
+            <p class="text-xs text-gray-400 mt-2">© 2025 Interactive Guide. All Rights Reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sections = document.querySelectorAll('.content-section');
+        const navLinks = document.querySelectorAll('.nav-item');
+        
+        const koshaGradeChartCtx = document.getElementById('koshaGradeChart')?.getContext('2d');
+        let capexChart, opexChart;
+
+        const dataStore = {
+            koshaGrades: {
+                labels: ['S등급', 'A등급', 'B등급', 'C등급', 'D등급'],
+                data: [2, 46, 60, 10, 6],
+            },
+            personnelRules: [
+                { limit: 100, employees: 10000, req: { doctor: 1, nurse: 2, hygienist_pro: 1, hygienist_staff: 1 } },
+                { limit: 250, employees: 25000, req: { doctor: 2, nurse: 8, hygienist_pro: 1, hygienist_staff: 7 } },
+                { limit: 450, employees: 45000, req: { doctor: 3, nurse: 16, hygienist_pro: 1, hygienist_staff: 15 } },
+                { limit: Infinity, employees: Infinity, req: { doctor: 4, nurse: 22, hygienist_pro: 1, hygienist_staff: 21 } },
+            ]
+        };
+        
+        function navigate(targetId) {
+            sections.forEach(section => {
+                section.classList.toggle('active', section.id === targetId);
+            });
+            navLinks.forEach(link => {
+                link.classList.toggle('active', link.id === `nav-${targetId}`);
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (targetId === 'market-analysis' && koshaGradeChartCtx && !window.koshaGradeChartInstance) {
+                createKoshaGradeChart();
+            }
+            if (targetId === 'cost') {
+                updateCostSimulator();
+            }
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.id.replace('nav-', '');
+                navigate(targetId);
+            });
+        });
+
+        function createKoshaGradeChart() {
+            window.koshaGradeChartInstance = new Chart(koshaGradeChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: dataStore.koshaGrades.labels,
+                    datasets: [{
+                        label: '기관 수',
+                        data: dataStore.koshaGrades.data,
+                        backgroundColor: ['#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'],
+                        borderColor: '#ffffff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: false },
+                         tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.raw}개 기관`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { drawOnChartArea: false }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 인력 기준 계산기
+        const companySlider = document.getElementById('companyScale');
+        const employeeSlider = document.getElementById('employeeScale');
+        const companyValueSpan = document.getElementById('companyScaleValue');
+        const employeeValueSpan = document.getElementById('employeeScaleValue');
+        const personnelDiv = document.getElementById('requiredPersonnel').querySelector('ul');
+
+        function updateRequiredPersonnel() {
+            const companies = parseInt(companySlider.value);
+            const employees = parseInt(employeeSlider.value);
+            
+            companyValueSpan.textContent = companies;
+            employeeValueSpan.textContent = employees;
+
+            let required = {};
+            // 산업보건지도사 단독 지정의 경우 (예시로 기본 법인 기준만 적용)
+            if (companies <= 30 && employees <= 2000) {
+                 // 여기서는 법인 기준을 우선
+            }
+
+            let ruleForCompanies = dataStore.personnelRules.find(r => companies <= r.limit);
+            let ruleForEmployees = dataStore.personnelRules.find(r => employees <= r.employees);
+            
+            // 더 엄격한 기준 적용
+            const finalRule = (ruleForCompanies.limit/100) > (ruleForEmployees.employees/10000) ? ruleForCompanies : ruleForEmployees;
+            required = finalRule.req;
+            
+            // 사업장 451개소 또는 근로자 45,001명 이상 시 추가 인력 계산
+            if (companies > 450 || employees > 45000) {
+                 const extraCompanies = Math.max(0, companies - 450);
+                 const extraEmployees = Math.max(0, employees - 45000);
+                 const extraDoctors = Math.max(Math.floor(extraCompanies / 150), Math.floor(extraEmployees / 15000));
+                 const extraStaff = Math.max(Math.floor(extraCompanies / 25), Math.floor(extraEmployees / 2500));
+                 required.doctor = 3 + extraDoctors;
+                 required.nurse += Math.ceil(extraStaff / 2); // 간호사와 산업위생인력 배분은 가정
+                 required.hygienist_staff += Math.floor(extraStaff / 2);
+            }
+
+            personnelDiv.innerHTML = `
+                <li><strong>의사:</strong> ${required.doctor}명 이상</li>
+                <li><strong>간호사:</strong> ${required.nurse}명 이상</li>
+                <li><strong>산업보건지도사/기술사:</strong> ${required.hygienist_pro}명 이상</li>
+                <li><strong>산업위생관리산업기사 이상:</strong> ${required.hygienist_staff}명 이상</li>
+            `;
+        }
+
+        if (companySlider) {
+          companySlider.addEventListener('input', updateRequiredPersonnel);
+          employeeSlider.addEventListener('input', updateRequiredPersonnel);
+        }
+
+        // 비용 시뮬레이터
+        const costInputs = [
+            'officeSize', 'rentPerPyeong', 'depositPerPyeong', 'interiorPerPyeong', 
+            'equipmentCost', 'doctorSalary', 'nurseSalary', 'hygienistSalary', 'hygieneStaffSalary'
+        ];
+        costInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.addEventListener('input', updateCostSimulator);
+        });
+        
+        const capexChartCtx = document.getElementById('capexChart')?.getContext('2d');
+        const opexChartCtx = document.getElementById('opexChart')?.getContext('2d');
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('ko-KR').format(Math.round(num));
+        }
+
+        function updateCostSimulator() {
+            const values = {};
+            costInputs.forEach(id => values[id] = parseFloat(document.getElementById(id).value) || 0);
+
+            // CAPEX 계산
+            const deposit = values.officeSize * values.depositPerPyeong;
+            const interior = values.officeSize * values.interiorPerPyeong;
+            const equipment = values.equipmentCost;
+            const totalCapex = deposit + interior + equipment;
+
+            document.getElementById('totalCapex').textContent = formatNumber(totalCapex);
+            
+            // OPEX 계산
+            const rent = values.officeSize * values.rentPerPyeong;
+            const salaries = values.doctorSalary + values.nurseSalary + values.hygienistSalary + values.hygieneStaffSalary;
+            const others = (rent + salaries) * 0.1; // 관리비, 소모품 등 기타 비용을 임대료+인건비의 10%로 가정
+            const totalOpex = rent + salaries + others;
+
+            document.getElementById('totalOpex').textContent = formatNumber(totalOpex);
+
+            // 차트 업데이트
+            const capexData = {
+                labels: ['사무실 보증금', '인테리어', '장비 구매'],
+                datasets: [{
+                    data: [deposit, interior, equipment],
+                    backgroundColor: ['#3B82F6', '#60A5FA', '#93C5FD'],
+                }]
+            };
+
+            const opexData = {
+                labels: ['월 임대료', '인건비', '기타 운영비'],
+                datasets: [{
+                    data: [rent, salaries, others],
+                    backgroundColor: ['#10B981', '#34D399', '#6EE7B7'],
+                }]
+            };
+
+            if (capexChart) capexChart.destroy();
+            if (opexChart) opexChart.destroy();
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: {size: 10} } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += formatNumber(context.parsed) + ' 만원';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            };
+            
+            if(capexChartCtx) {
+                capexChart = new Chart(capexChartCtx, { type: 'doughnut', data: capexData, options: chartOptions });
+            }
+            if(opexChartCtx) {
+                opexChart = new Chart(opexChartCtx, { type: 'doughnut', data: opexData, options: chartOptions });
+            }
+        }
+        
+        // 초기화
+        navigate('market-analysis');
+        updateRequiredPersonnel();
+    });
+    </script>
+</body>
+</html>
